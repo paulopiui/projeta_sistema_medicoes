@@ -1,5 +1,3 @@
-load_dotenv
-os
 pandas
 streamlit
 supabase
