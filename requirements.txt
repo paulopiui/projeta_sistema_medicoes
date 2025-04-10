@@ -1,0 +1,6 @@
+psycopg2
+load_dotenv
+os
+pandas
+streamlit
+supabase
