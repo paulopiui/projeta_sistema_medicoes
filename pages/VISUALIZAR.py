@@ -53,23 +53,23 @@ def carregar_contratos():
 # Carregar contratos
 df_contratos = carregar_contratos()
 
-st.subheader("Medições")   
+st.subheader("Medições por Contrato")   
 
 col1, col2, col3, col4 = st.columns([0.25, 0.10, 0.25, 0.35])
 
 with col1:
     cliente_opcoes = df_contratos["cliente"].dropna().unique().tolist()
-    cliente_selecionado = st.selectbox("Cliente", ["Todos"] + cliente_opcoes)
+    cliente_selecionado = st.selectbox("Cliente", [""] + cliente_opcoes)
 
 with col2:
 
-    if cliente_selecionado != "Todos":
+    if cliente_selecionado != "":
         df_filtrado_clientes = df_contratos[df_contratos["cliente"] == cliente_selecionado]
         contrato_opcoes = df_filtrado_clientes["numero_contrato_ata"].dropna().unique().tolist()
     else:
         contrato_opcoes = df_contratos["numero_contrato_ata"].dropna().unique().tolist()
     
-    contrato_selecionado = st.selectbox("Contrato", contrato_opcoes)
+    contrato_selecionado = st.selectbox("Contrato", [""] + contrato_opcoes)
 
 # Aplicação dos filtros
 df_filtrado = df_contratos.copy()
@@ -77,8 +77,10 @@ df_filtrado = df_contratos.copy()
 st.write("")
 st.write("")
 
-if cliente_selecionado != "Todos":
+if cliente_selecionado != "":
     df_filtrado = df_filtrado[df_filtrado["cliente"] == cliente_selecionado]
+else:
+    df_filtrado = df_filtrado[df_filtrado["cliente"].isnull()]
 
 if contrato_selecionado:
     df_filtrado = df_filtrado[df_filtrado["numero_contrato_ata"] == contrato_selecionado]    
@@ -86,6 +88,11 @@ if contrato_selecionado:
     col1, col2, col3, col4 = st.columns([0.3, 0.25, 0.20, 0.20])
 
     with col1:
+
+        if df_filtrado.empty:
+            st.warning("Nenhum contrato encontrado.")
+            st.stop()
+
         cliente = df_filtrado.iloc[0]["cliente"]
         st.subheader(f"{cliente}")
 

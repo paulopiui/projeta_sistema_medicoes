@@ -6,6 +6,9 @@ from conexao_supabase import supabase
 utils.config_pagina_centralizada()
 utils.exibir_cabecalho_centralizado()
 
+def on_change():
+    st.session_state.tipologia_opcoes = lista_opcoes_tipologia(st.session_state.area_atuacao_cad)
+
 # Título da Aplicação
 st.title("Cadastro de Dados")
 
@@ -46,53 +49,13 @@ with aba_cadastro_municipio:
         else:
             st.error("Por favor, preencha todos os campos corretamente.")
 
-
 with aba_cadastro_cliente:
     st.write("")
-    # Formulário de Cadastro
-    with st.form(key='cadastro_cliente_form'):
-        cliente = st.text_input("Cliente*").title() # title é usado para que o texto tenha a primeira maiuscula e demais minusculas
-        
-        query = (
-            supabase.table("tb_municipios")
-            .select("municipio, uf")                        
-            .execute()
-        )
 
-        data = query.data if query.data else []
-        df_municipios = pd.DataFrame(data)          
-        
-        if not df_municipios.empty:
-
-            df_municipios["uf"] = df_municipios["uf"].astype(str).str.strip()
-            df_municipios["municipio"] = df_municipios["municipio"].astype(str).str.strip()
-
-            uf_opcoes = df_municipios["uf"].dropna().unique().tolist() 
-            uf_opcoes.insert(0, "Todos")
-
-            uf_selecionado = st.selectbox("UF",uf_opcoes)  
-
-            if uf_selecionado != "Todos":
-                municipios_filtrado = df_municipios[df_municipios["uf"] == uf_selecionado].copy()                  
-            else:
-                municipios_filtrado = df_municipios.copy()
-            
-            municipios_opcoes = sorted(municipios_filtrado["municipio"].dropna().unique().tolist())            
-
-            municipio_selecionado = st. selectbox("Município", municipios_opcoes)
-        
-        else:
-            st.warning("Nenhum município encontrado.")
-
-        st.write(f"Seleção de UF: {uf_selecionado}")
-        
-        st.dataframe(municipios_filtrado)        
-
-        st.form_submit_button("Cadastrar")
-   
+ 
+  
 with aba_cadastro_contrato:
     st.write("")
 
 with aba_cadastro_item_medido:
     st.write("")
-
