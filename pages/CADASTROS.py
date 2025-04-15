@@ -11,7 +11,7 @@ st.title("Cadastro de Dados")
 
 # Seção de Abas
 aba_cadastro_municipio,aba_cadastro_cliente, aba_cadastro_contrato, aba_cadastro_item_medido = st.tabs(
-    ["Município", "Cliente", "Contrato", "Item"]
+    ["Município", "Cliente", "Contrato", "Item Medição"]
 )
 
 with aba_cadastro_municipio:
@@ -21,8 +21,8 @@ with aba_cadastro_municipio:
     # Formulário de Cadastro
     with st.form(key='cadastro_municipio_form'):
         # strip é usado para remover espaços em branco no início e no final do texto
-        municipio = st.text_input("Município*").title().strip() # title é usado para que o texto tenha a primeira maiuscula e demais minusculas
-        uf = st.text_input("UF*", max_chars=2).upper().strip() # upper é usado para que o texto tenha todas as letras maiusculas
+        municipio = st.text_input("Município*", placeholder="Informe um município").title().strip() # title é usado para que o texto tenha a primeira maiuscula e demais minusculas
+        uf = st.text_input("UF*", max_chars=2, placeholder="Informe uma UF").upper().strip() # upper é usado para que o texto tenha todas as letras maiusculas
         submit_button = st.form_submit_button("Cadastrar")
 
         if submit_button:
@@ -60,8 +60,12 @@ with aba_cadastro_cliente:
     mapa_municipios = {f"{m['uf']} - {m['municipio']}": m["id"] for m in municipios.data}
 
     with st.form(key='cadastro_cliente_form'):
-        cliente = st.text_input("Nome do Cliente*").strip().title()
-        municipio_selecionado = st.selectbox("Município*", sorted(lista_municipios))
+        cliente = st.text_input("Nome do Cliente*", placeholder="Insira o nome do cliente").strip().title()
+        
+        municipio_selecionado = st.selectbox(
+            "Município*",
+            [""] + sorted(lista_municipios))
+        
         submit_button_cliente = st.form_submit_button("Cadastrar")
 
         if submit_button_cliente:
@@ -148,8 +152,6 @@ with aba_cadastro_contrato:
                 except Exception as e:
                     st.error("Erro ao cadastrar contrato.")
                     st.write(f"Detalhes técnicos: {e}")
-
-
 
 with aba_cadastro_item_medido:
     st.write("")
