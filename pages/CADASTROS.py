@@ -86,9 +86,70 @@ with aba_cadastro_cliente:
                     st.error("Erro ao cadastrar cliente.")
                     st.write(f"Detalhes técnicos (debug): {e}")
 
-  
-with aba_cadastro_contrato:
-    st.write("")
+with aba_cadastro_contrato:    
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        # Carregar clientes
+        clientes = supabase.table("tb_clientes").select("id, cliente").execute()
+        mapa_clientes = {c["cliente"]: c["id"] for c in clientes.data}
+        cliente_selecionado = st.selectbox("Cliente*", sorted(mapa_clientes.keys()))
+
+    with col2:
+        # Carregar empresas
+        empresas = supabase.table("tb_empresas").select("id, empresa_grupo_projeta").execute()
+        mapa_empresas = {e["empresa_grupo_projeta"]: e["id"] for e in empresas.data}
+        empresa_selecionada = st.selectbox("Empresa Grupo Projeta*", sorted(mapa_empresas.keys()))
+
+    with st.form(key="cadastro_contrato_form"):
+        numero_contrato = st.text_input("Número do Contrato/Ata*").strip().upper()
+        ano = st.number_input("Ano*", min_value=2000, max_value=2100, step=1)
+        tipo = st.selectbox("Tipo de Contrato*", ["Adesão", "Licitação"])  # Ajuste conforme enum
+        status = st.selectbox("Status do Contrato*", ["Ativo", "Finalizado", "A vencer"])  # Ajuste conforme enum
+        dt_assinatura = st.date_input("Data da Assinatura*")
+        prazo_dias = st.number_input("Prazo (em dias)*", min_value=1)
+        valor_inicial = st.number_input("Valor Inicial*", min_value=0.0, format="%.2f")
+        valor_atualizado = st.number_input("Valor Atualizado*", min_value=0.0, format="%.2f")
+        submit_button_contrato = st.form_submit_button("Cadastrar Contrato")
+
+        if submit_button_contrato:
+            id_cliente = mapa_clientes[cliente_selecionado]
+            id_empresa = mapa_empresas[empresa_selecionada]
+
+            # Verificar duplicidade
+            contrato_existe = (
+                supabase.table("tb_contratos")
+                .select("id")
+                .eq("numero_contrato_ata", numero_contrato)
+                .execute()
+            )
+
+            if contrato_existe.data:
+                st.warning("⚠️  ATENÇÃO: Já existe um contrato com este número.")
+            else:
+                dados_contrato = {
+                    "id_cliente": id_cliente,
+                    "id_empresa_grupo_projeta": id_empresa,
+                    "numero_contrato_ata": numero_contrato,
+                    "ano": ano,
+                    "tipo": tipo,
+                    "status": status,
+                    "dt_assinatura": dt_assinatura.isoformat(),
+                    "prazo_dias": prazo_dias,
+                    "valor_inicial": valor_inicial,
+                    "valor_atualizado": valor_atualizado,
+                }
+
+                try:
+                    with st.spinner("Cadastrando contrato..."):
+                        supabase.table("tb_contratos").insert(dados_contrato).execute()
+                    st.success("Contrato cadastrado com sucesso!")
+                except Exception as e:
+                    st.error("Erro ao cadastrar contrato.")
+                    st.write(f"Detalhes técnicos: {e}")
+
+
 
 with aba_cadastro_item_medido:
     st.write("")
