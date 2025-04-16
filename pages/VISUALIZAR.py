@@ -123,7 +123,7 @@ if contrato_selecionado:
     query_itens = (
         supabase
         .table("tb_itens_medidos")
-        .select("id_medicao, item, quantidade_medida, unidade_medida, valor_medido, valor_unitario")
+        .select("id_medicao, id_item, quantidade_medida, unidade_medida, valor_medido, valor_unitario")
         .execute()
     )
     data_itens = query_itens.data if query_itens.data else []
@@ -139,10 +139,10 @@ if contrato_selecionado:
             with st.expander(titulo_expander):
                 df_filtrado_itens = df_itens_medidos[df_itens_medidos["id_medicao"] == id_medicao]
 
-                df_itens_exibicao = df_filtrado_itens[["item", "valor_unitario", "quantidade_medida", "unidade_medida", "valor_medido"]]  # Selecionando colunas específicas
+                df_itens_exibicao = df_filtrado_itens[["id_item", "valor_unitario", "quantidade_medida", "unidade_medida", "valor_medido"]]  # Selecionando colunas específicas
 
                 df_itens_exibicao = df_itens_exibicao.rename(columns={
-                        "item": "Item",
+                        "id_item": "Item",
                         "valor_unitario": "Valor Unitário",
                         "quantidade_medida": "Quantidade",
                         "unidade_medida": "Unidade",

@@ -10,7 +10,7 @@ utils.exibir_cabecalho_centralizado()
 st.title("Cadastro de Dados")
 
 # Seção de Abas
-aba_cadastro_municipio,aba_cadastro_cliente, aba_cadastro_contrato, aba_cadastro_item_medido = st.tabs(
+aba_cadastro_municipio,aba_cadastro_cliente, aba_cadastro_contrato, aba_cadastro_item = st.tabs(
     ["Município", "Cliente", "Contrato", "Item Medição"]
 )
 
@@ -107,14 +107,37 @@ with aba_cadastro_contrato:
         empresa_selecionada = st.selectbox("Empresa Grupo Projeta*", sorted(mapa_empresas.keys()))
 
     with st.form(key="cadastro_contrato_form"):
-        numero_contrato = st.text_input("Número do Contrato/Ata*").strip().upper()
-        ano = st.number_input("Ano*", min_value=2000, max_value=2100, step=1)
-        tipo = st.selectbox("Tipo de Contrato*", ["Adesão", "Licitação"])  # Ajuste conforme enum
-        status = st.selectbox("Status do Contrato*", ["Ativo", "Finalizado", "A vencer"])  # Ajuste conforme enum
-        dt_assinatura = st.date_input("Data da Assinatura*")
-        prazo_dias = st.number_input("Prazo (em dias)*", min_value=1)
-        valor_inicial = st.number_input("Valor Inicial*", min_value=0.0, format="%.2f")
-        valor_atualizado = st.number_input("Valor Atualizado*", min_value=0.0, format="%.2f")
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            numero_contrato = st.text_input("Número do Contrato/Ata*").strip().upper()
+        
+        with col2:        
+            ano = st.number_input("Ano*", min_value=2000, max_value=2100, step=1)
+        
+        with col3:
+            tipos_contrato = supabase.rpc("get_enum_values", {
+                "table_name": "tb_contratos",
+                "column_name": "tipo"
+            }).execute()
+
+        
+            lista_tipos = tipos_contrato.data or []
+        
+            tipo = st.selectbox("Tipo de Contrato*", lista_tipos)  # Ajuste conforme enum
+
+        col4, col5, col6 = st.columns(3)                  
+        
+        with col4:
+            dt_assinatura = st.date_input("Data da Assinatura*")
+        
+        with col5:
+            prazo_dias = st.number_input("Prazo (em dias)*", min_value=1)
+        
+        with col6:
+            valor_inicial = st.number_input("Valor Inicial*", min_value=0.0, format="%.2f")
+        
         submit_button_contrato = st.form_submit_button("Cadastrar Contrato")
 
         if submit_button_contrato:
@@ -141,8 +164,7 @@ with aba_cadastro_contrato:
                     "status": status,
                     "dt_assinatura": dt_assinatura.isoformat(),
                     "prazo_dias": prazo_dias,
-                    "valor_inicial": valor_inicial,
-                    "valor_atualizado": valor_atualizado,
+                    "valor_inicial": valor_inicial                    
                 }
 
                 try:
@@ -153,5 +175,35 @@ with aba_cadastro_contrato:
                     st.error("Erro ao cadastrar contrato.")
                     st.write(f"Detalhes técnicos: {e}")
 
-with aba_cadastro_item_medido:
-    st.write("")
+with aba_cadastro_item:
+    
+    with st.form(key="cadastro_item_form"):
+
+        nome_item = st.text_input("Nome do Item*").strip().title()
+    
+        st.form_submit_button("Cadastrar Item")
+
+        if submit_button:
+
+            if nome_item:
+                # Verificar duplicidade
+                item_existe = (
+                    supabase.table("tb_itens")
+                    .select("id")
+                    .eq("item", nome_item)
+                    .execute()
+                )
+
+                if item_existe.data:
+                    st.warning("⚠️  ATENÇÃO: Já existe um item com este nome.")
+                else:               
+
+                    try:
+                        with st.spinner("Cadastrando item..."):
+                            supabase.table("tb_itens").insert(nome_item).execute()
+                    except Exception as e:
+                        st.error("Erro ao cadastrar item.")
+                        st.write(f"Detalhes técnicos: {e}")
+
+            st.success("Item cadastrado com sucesso!")
+
