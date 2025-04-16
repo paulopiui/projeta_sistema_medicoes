@@ -53,7 +53,7 @@ def carregar_contratos():
 # Carregar contratos
 df_contratos = carregar_contratos()
 
-st.subheader("Medições por Contrato")   
+st.subheader("Cadastro de Medições por Contrato")   
 
 col1, col2, col3, col4 = st.columns([0.25, 0.10, 0.25, 0.35])
 
@@ -109,49 +109,11 @@ if contrato_selecionado:
         st.write(f"Status: {status}")    
 
     id_contrato = df_filtrado.iloc[0]["id"]
+    
     query = (
         supabase
         .table("tb_medicoes")
         .select("id, id_contrato, numero_medicao, mes_referencia, valor_medido, status")
         .eq("id_contrato", id_contrato)
         .execute()
-    )
-    
-    data = query.data if query.data else []
-    df_medicoes = pd.DataFrame(data)        
-
-    query_itens = (
-        supabase
-        .table("tb_itens_medidos")
-        .select("id_medicao, id_item, quantidade_medida, unidade_medida, valor_medido, valor_unitario")
-        .execute()
-    )
-    data_itens = query_itens.data if query_itens.data else []
-    df_itens_medidos = pd.DataFrame(data_itens)    
-
-    if not df_medicoes.empty:        
-        
-        for _, row in df_medicoes.iterrows():
-            mes_ano = row["mes_referencia"][:7] if "mes_referencia" in row else "N/A"
-            id_medicao = row["id"]
-            titulo_expander = f'**Medição** {row["numero_medicao"]} - **Mês:** {mes_ano} - **Valor:** R$ {row["valor_medido"]:,.2f}'.replace(",", "X").replace(".", ",").replace("X", ".")
-
-            with st.expander(titulo_expander):
-                df_filtrado_itens = df_itens_medidos[df_itens_medidos["id_medicao"] == id_medicao]
-
-                df_itens_exibicao = df_filtrado_itens[["id_item", "valor_unitario", "quantidade_medida", "unidade_medida", "valor_medido"]]  # Selecionando colunas específicas
-
-                df_itens_exibicao = df_itens_exibicao.rename(columns={
-                        "id_item": "Item",
-                        "valor_unitario": "Valor Unitário",
-                        "quantidade_medida": "Quantidade",
-                        "unidade_medida": "Unidade",
-                        "valor_medido": "Valor (R$)"
-                })
-
-                if not df_filtrado_itens.empty:
-                    st.dataframe(df_itens_exibicao, hide_index=True)
-                else:
-                    st.warning("Nenhum item medido encontrado.")
-    else:
-        st.warning("Sem medições")  
+    )       

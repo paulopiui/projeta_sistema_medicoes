@@ -50,6 +50,19 @@ with aba_cadastro_municipio:
             else:
                 st.error("Por favor, preencha todos os campos corretamente.")
 
+    tabela_municipios = supabase.table("tb_municipios").select("id, municipio, uf, dt_cadastro").execute()
+    if tabela_municipios.data:
+        df_municipios = pd.DataFrame(tabela_municipios.data)
+        df_municipios = df_municipios.rename(columns={"municipio": "Município", "uf": "UF", "dt_cadastro": "Data de Cadastro"})
+        df_municipios["Data de Cadastro"] = pd.to_datetime(df_municipios["Data de Cadastro"], format="mixed")
+        df_municipios["Data de Cadastro"] = df_municipios["Data de Cadastro"].dt.strftime("%Y-%m-%d %H:%M:%S")
+
+        df_municipios = df_municipios[["Município", "UF", "Data de Cadastro"]]
+        st.write("Lista de Municípios Cadastrados")
+        st.dataframe(df_municipios, use_container_width=True)
+    else:
+        st.warning("Nenhum município cadastrado até o momento.")
+
 with aba_cadastro_cliente:
     st.write("")
 
@@ -89,6 +102,21 @@ with aba_cadastro_cliente:
                 except Exception as e:
                     st.error("Erro ao cadastrar cliente.")
                     st.write(f"Detalhes técnicos (debug): {e}")
+
+    df_clientes = supabase.table("tb_clientes").select("id, cliente, tb_municipios(municipio, uf), dt_cadastro").execute()
+    if df_clientes.data: 
+        df_clientes = pd.DataFrame(df_clientes.data)
+        df_clientes["municipio"] = df_clientes["tb_municipios"].apply(lambda x: x["municipio"] if isinstance(x, dict) else None)
+        df_clientes["uf"] = df_clientes["tb_municipios"].apply(lambda x: x["uf"] if isinstance(x, dict) else None)
+        df_clientes.drop(columns=["tb_municipios"], inplace=True)
+        df_clientes = df_clientes.rename(columns={"cliente": "Cliente", "municipio": "Município", "uf": "UF", "dt_cadastro": "Data de Cadastro"})
+        df_clientes["Data de Cadastro"] = pd.to_datetime(df_clientes["Data de Cadastro"], format="mixed")
+        df_clientes["Data de Cadastro"] = df_clientes["Data de Cadastro"].dt.strftime("%Y-%m-%d %H:%M:%S")
+        df_clientes = df_clientes[["Cliente", "Município", "UF", "Data de Cadastro"]]
+        st.write("Lista de Clientes Cadastrados")
+        st.dataframe(df_clientes, use_container_width=True)
+    else:
+        st.warning("Nenhum cliente cadastrado até o momento.")
 
 with aba_cadastro_contrato:    
 
@@ -160,8 +188,7 @@ with aba_cadastro_contrato:
                     "id_empresa_grupo_projeta": id_empresa,
                     "numero_contrato_ata": numero_contrato,
                     "ano": ano,
-                    "tipo": tipo,
-                    "status": status,
+                    "tipo": tipo,                    
                     "dt_assinatura": dt_assinatura.isoformat(),
                     "prazo_dias": prazo_dias,
                     "valor_inicial": valor_inicial                    
@@ -174,6 +201,31 @@ with aba_cadastro_contrato:
                 except Exception as e:
                     st.error("Erro ao cadastrar contrato.")
                     st.write(f"Detalhes técnicos: {e}")
+
+    df_contratos = (supabase.table("tb_contratos")
+                    .select("id, numero_contrato_ata, ano, tipo, dt_assinatura, prazo_dias, valor_inicial, tb_clientes(cliente), tb_empresas(empresa_grupo_projeta)")                    
+                    .execute())
+
+    df_contratos = pd.DataFrame(df_contratos.data)
+    df_contratos["cliente"] = df_contratos["tb_clientes"].apply(lambda x: x["cliente"] if isinstance(x, dict) else None)
+    df_contratos["empresa_grupo_projeta"] = df_contratos["tb_empresas"].apply(lambda x: x["empresa_grupo_projeta"] if isinstance(x, dict) else None)
+    df_contratos.drop(columns=["tb_clientes", "tb_empresas"], inplace=True)
+    df_contratos = df_contratos.rename(columns={
+        "numero_contrato_ata": "Contrato/Ata",
+        "ano": "Ano",
+        "tipo": "Tipo",
+        "dt_assinatura": "Data de Assinatura",
+        "prazo_dias": "Prazo (dias)",
+        "valor_inicial": "Valor Inicial",
+        "cliente": "Cliente",
+        "empresa_grupo_projeta": "Empresa do Grupo"
+    })
+    df_contratos["Data de Assinatura"] = pd.to_datetime(df_contratos["Data de Assinatura"], format="mixed")
+    df_contratos["Data de Assinatura"] = df_contratos["Data de Assinatura"].dt.strftime("%Y-%m-%d %H:%M:%S")
+    df_contratos_filtrados = df_contratos[df_contratos["Cliente"] == cliente_selecionado] 
+    df_contratos_filtrados = df_contratos_filtrados[["Contrato/Ata", "Ano", "Tipo", "Data de Assinatura", "Prazo (dias)", "Valor Inicial", "Empresa do Grupo"]] 
+    st.write("Lista de Contratos Cadastrados")
+    st.dataframe(df_contratos_filtrados, use_container_width=True)
 
 with aba_cadastro_item:
     
