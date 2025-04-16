@@ -63,8 +63,7 @@ with aba_cadastro_municipio:
     else:
         st.warning("Nenhum município cadastrado até o momento.")
 
-with aba_cadastro_cliente:
-    st.write("")
+with aba_cadastro_cliente:    
 
     # Buscar municípios existentes para popular o selectbox
     municipios = supabase.table("tb_municipios").select("id, municipio, uf").execute()
@@ -258,4 +257,3 @@ with aba_cadastro_item:
                         st.write(f"Detalhes técnicos: {e}")
 
             st.success("Item cadastrado com sucesso!")
-
