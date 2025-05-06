@@ -6,6 +6,7 @@ from conexao_supabase import supabase
 # Configuração da Página e Cabeçalho
 utils.config_pagina()
 utils.exibir_cabecalho()
+utils.validar_login()
 
 st.markdown(
     """

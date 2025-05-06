@@ -5,9 +5,14 @@ from conexao_supabase import supabase
 
 utils.config_pagina_centralizada()
 utils.exibir_cabecalho_centralizado()
+utils.validar_login()
+utils.validar_nivel_acesso("administrador")
 
-# Título da Aplicação
-st.title("Cadastro de Dados")
+col1, col2, col3 = st.columns([1, 3, 1])
+
+with col2:
+    # Título da Aplicação
+    st.title("Cadastro de Dados")
 
 # Seção de Abas
 aba_cadastro_municipio,aba_cadastro_cliente, aba_cadastro_contrato, aba_cadastro_item = st.tabs(
@@ -204,8 +209,7 @@ with aba_cadastro_contrato:
     df_contratos = (supabase.table("tb_contratos")
                     .select("id, numero_contrato_ata, ano, tipo, dt_assinatura, prazo_dias, valor_inicial, tb_clientes(cliente), tb_empresas(empresa_grupo_projeta)")                    
                     .execute())
-
-    df_contratos = pd.DataFrame(df_contratos.data)
+    df_contratos = pd.DataFrame(df_contratos.data)    
     df_contratos["cliente"] = df_contratos["tb_clientes"].apply(lambda x: x["cliente"] if isinstance(x, dict) else None)
     df_contratos["empresa_grupo_projeta"] = df_contratos["tb_empresas"].apply(lambda x: x["empresa_grupo_projeta"] if isinstance(x, dict) else None)
     df_contratos.drop(columns=["tb_clientes", "tb_empresas"], inplace=True)
