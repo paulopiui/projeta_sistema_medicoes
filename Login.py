@@ -65,7 +65,8 @@ with aba_cadastro:
     
     if st.button("Cadastrar"):
         try:            
-            res = supabase.auth.sign_up({                
+            res = supabase.auth.sign_up({    
+                "nome": nome,                                                     
                 "email": email,
                 "password": senha
             })        
