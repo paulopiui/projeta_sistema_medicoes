@@ -129,7 +129,11 @@ with aba_cadastro_contrato:
     with col1:
         # Carregar clientes
         clientes = supabase.table("tb_clientes").select("id, cliente").execute()
-        mapa_clientes = {c["cliente"]: c["id"] for c in clientes.data}
+        mapa_clientes = {}
+        for c in clientes.data:
+            cliente_nome = c["cliente"].strip()
+            if cliente_nome not in mapa_clientes:
+                mapa_clientes[cliente_nome] = c["id"]
         cliente_selecionado = st.selectbox("Cliente*", sorted(mapa_clientes.keys()))
 
     with col2:
