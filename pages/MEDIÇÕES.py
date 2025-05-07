@@ -7,6 +7,7 @@ from conexao_supabase import supabase
 utils.config_pagina()
 utils.exibir_cabecalho()
 utils.validar_login()
+utils.validar_nivel_acesso("gerente")
 
 st.markdown(
     """
