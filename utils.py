@@ -4,7 +4,7 @@ from conexao_supabase import supabase
 def exibir_cabecalho():
 
     """Exibe o cabeçalho padrão em todas as páginas."""
-    col1, col2, col3 = st.columns([0.1, 0.2 ,0.6])
+    col1, col2, col3, col4 = st.columns([0.1, 0.2 ,0.6, 0.2])
 
     with col1:
         # Exibir logo no topo
@@ -13,7 +13,17 @@ def exibir_cabecalho():
     with col3:
         #st.markdown('<h2 class="custom-subheader">Gerenciamento de Contratos</h2>', unsafe_allow_html=True)
         st.title("Gerenciamento de Contratos")
-
+    
+    with col4:                
+            
+        if "auth_user" not in st.session_state or st.session_state["auth_user"] is None:
+            st.markdown(f'<h6 class="custom-subheader" style="text-align: right;">Usuário: Não logado</h6>', unsafe_allow_html=True)
+        else:
+            user_id = st.session_state["auth_user"].id
+            res = supabase.table("user_perfil").select("nome").eq("id", user_id).single().execute()
+            #st.markdown(f'<h6 class="custom-subheader">Usuário: {st.session_state["auth_user"].email}</h6>', unsafe_allow_html=True)
+            st.markdown(f'<h6 class="custom-subheader" style="text-align: right;">Usuário: {res.data["nome"]}</h6>', unsafe_allow_html=True)
+            
     st.divider()
 
 def config_pagina():
@@ -28,8 +38,16 @@ def exibir_cabecalho_centralizado():
     col1, col2, col3 = st.columns([0.2, 0.6, 0.2])
 
     with col2:
-        st.image("img/logo.png", width=350)  # Substitua pelo caminho da sua logo
-
+        st.image("img/logo.png", width=350)  # Substitua pelo caminho da sua logo    
+      
+    if "auth_user" not in st.session_state or st.session_state["auth_user"] is None:
+        st.markdown(f'<h6 class="custom-subheader" style="text-align: right;">Usuário: Não logado</h6>', unsafe_allow_html=True)
+    else:
+        user_id = st.session_state["auth_user"].id
+        res = supabase.table("user_perfil").select("nome").eq("id", user_id).single().execute()
+        #st.markdown(f'<h6 class="custom-subheader" style="text-align: right;">Usuário: {st.session_state["auth_user"].email}</h6>', unsafe_allow_html=True)
+        st.markdown(f'<h6 class="custom-subheader" style="text-align: right;">Usuário: {res.data["nome"]}</h6>', unsafe_allow_html=True)
+            
     st.divider()
 
 def config_pagina_centralizada():
@@ -49,7 +67,8 @@ def validar_nivel_acesso(nivel_acesso_necessario):
     
     NIVEIS_ACESSO = {
         "usuario": 1,
-        "administrador": 2
+        "gerente": 2,
+        "administrador": 3
     }
         
     user_id = st.session_state["auth_user"].id

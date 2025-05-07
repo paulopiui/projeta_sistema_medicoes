@@ -6,7 +6,7 @@ from conexao_supabase import supabase
 utils.config_pagina_centralizada()
 utils.exibir_cabecalho_centralizado()
 utils.validar_login()
-utils.validar_nivel_acesso("administrador")
+utils.validar_nivel_acesso("gerente")
 
 col1, col2, col3 = st.columns([1, 3, 1])
 
