@@ -8,6 +8,10 @@ utils.exibir_cabecalho_centralizado()
 utils.validar_login()
 utils.validar_nivel_acesso("gerente")
 
+@st.dialog("Cadastro realizado com sucesso!")
+def show_success_dialog():    
+    st.write("")
+    
 col1, col2, col3 = st.columns([1, 3, 1])
 
 with col2:
@@ -15,8 +19,8 @@ with col2:
     st.title("Cadastro de Dados")
 
 # Seção de Abas
-aba_cadastro_municipio,aba_cadastro_cliente, aba_cadastro_contrato, aba_cadastro_item = st.tabs(
-    ["Município", "Cliente", "Contrato", "Item Medição"]
+aba_cadastro_municipio, aba_cadastro_cliente, aba_cadastro_contrato, aba_cadastro_aditivo, aba_cadastro_item = st.tabs(
+    ["Município", "Cliente", "Contrato", "Aditivo","Item Medição"]
 )
 
 with aba_cadastro_municipio:
@@ -234,13 +238,52 @@ with aba_cadastro_contrato:
     st.write("Lista de Contratos Cadastrados")
     st.dataframe(df_contratos_filtrados, use_container_width=True)
 
+with aba_cadastro_aditivo:    
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        # Carregar clientes
+        clientes = supabase.table("tb_clientes").select("id, cliente").execute()
+        mapa_clientes = {}
+        for c in clientes.data:
+            cliente_nome = c["cliente"].strip()
+            if cliente_nome not in mapa_clientes:
+                mapa_clientes[cliente_nome] = c["id"]
+        cliente_selecionado = st.selectbox("Cliente*", key="cliente_aditivo",options=sorted(mapa_clientes.keys()))
+
+    with col2:
+        
+        cliente_id = mapa_clientes.get(cliente_selecionado)
+        
+        # Carregar contratos
+        contratos = (
+            supabase.table("tb_contratos")
+            .select("id, numero_contrato_ata")
+            .eq("id_cliente",cliente_id)
+            .execute()
+            )
+        
+        mapa_contratos = {}
+        for c in contratos.data:
+            contrato_nome = c["numero_contrato_ata"].strip()
+            if contrato_nome not in mapa_contratos:
+                mapa_contratos[contrato_nome] = c["id"]      
+        
+        contrato_selecionado = st.selectbox(
+           "Contrato*", key="contrato_aditivo", options=sorted(mapa_contratos.keys())
+        )
+
+        
 with aba_cadastro_item:
+    
+    cadastro_realizado = False
     
     with st.form(key="cadastro_item_form"):
 
         nome_item = st.text_input("Nome do Item*").strip().title()
     
-        st.form_submit_button("Cadastrar Item")
+        submit_button=st.form_submit_button("Cadastrar Item")
 
         if submit_button:
 
@@ -258,10 +301,16 @@ with aba_cadastro_item:
                 else:               
 
                     try:
+                        data = {"item": nome_item}
+                        
                         with st.spinner("Cadastrando item..."):
-                            supabase.table("tb_itens").insert(nome_item).execute()
+                            supabase.table("tb_itens").insert(data).execute() 
+                        
+                        cadastro_realizado = True                                                                                 
+                                                        
                     except Exception as e:
                         st.error("Erro ao cadastrar item.")
                         st.write(f"Detalhes técnicos: {e}")
-
-            st.success("Item cadastrado com sucesso!")
+    
+    if cadastro_realizado:
+        show_success_dialog()
