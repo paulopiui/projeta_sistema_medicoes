@@ -65,8 +65,7 @@ with aba_cadastro:
     
     if st.button("Cadastrar"):
         try:            
-            res = supabase.auth.sign_up({    
-                "nome": nome,                                                     
+            res = supabase.auth.sign_up({                                                                    
                 "email": email,
                 "password": senha
             })        
@@ -77,7 +76,8 @@ with aba_cadastro:
                 
                 # Exemplo de dados adicionais
                 dados_perfil = {   
-                    "id": user_id,                                                      
+                    "id": user_id,           
+                    "nome": nome,                                                
                     "nivel_acesso": nivel_acesso
                 }
 
