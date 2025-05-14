@@ -4,7 +4,7 @@ import utils
 from conexao_supabase import supabase
 
 utils.config_pagina_centralizada()
-utils.exibir_cabecalho_centralizado()
+#utils.exibir_cabecalho_centralizado_pequeno()
 utils.validar_login()
 utils.validar_nivel_acesso("gerente")
 
@@ -65,14 +65,19 @@ with aba_cadastro_municipio:
         df_municipios = df_municipios.rename(columns={"municipio": "Município", "uf": "UF", "dt_cadastro": "Data de Cadastro"})
         df_municipios["Data de Cadastro"] = pd.to_datetime(df_municipios["Data de Cadastro"], format="mixed")
         df_municipios["Data de Cadastro"] = df_municipios["Data de Cadastro"].dt.strftime("%Y-%m-%d %H:%M:%S")
-
+        utils.formatar_data_hora_brasil(df_municipios, "Data de Cadastro")        
         df_municipios = df_municipios[["Município", "UF", "Data de Cadastro"]]
         st.write("Lista de Municípios Cadastrados")
-        st.dataframe(df_municipios, use_container_width=True)
+        
+        # Ajusta a altura da tabela
+        altura_final = utils.altura_tabela(df_municipios, 8)        
+        st.dataframe(df_municipios, use_container_width=True, height=altura_final)
     else:
         st.warning("Nenhum município cadastrado até o momento.")
 
-with aba_cadastro_cliente:    
+with aba_cadastro_cliente:  
+    
+    st.write("")  
 
     # Buscar municípios existentes para popular o selectbox
     municipios = supabase.table("tb_municipios").select("id, municipio, uf").execute()
@@ -121,12 +126,19 @@ with aba_cadastro_cliente:
         df_clientes["Data de Cadastro"] = pd.to_datetime(df_clientes["Data de Cadastro"], format="mixed")
         df_clientes["Data de Cadastro"] = df_clientes["Data de Cadastro"].dt.strftime("%Y-%m-%d %H:%M:%S")
         df_clientes = df_clientes[["Cliente", "Município", "UF", "Data de Cadastro"]]
+        utils.formatar_data_hora_brasil(df_clientes, "Data de Cadastro") 
+        
         st.write("Lista de Clientes Cadastrados")
-        st.dataframe(df_clientes, use_container_width=True)
+        
+        # Ajusta a altura da tabela
+        altura_final = utils.altura_tabela(df_clientes, 8)        
+        st.dataframe(df_clientes, use_container_width=True, height=altura_final)                
     else:
         st.warning("Nenhum cliente cadastrado até o momento.")
 
-with aba_cadastro_contrato:    
+with aba_cadastro_contrato:  
+    
+    st.write("")  
 
     col1, col2 = st.columns(2)
 
@@ -231,14 +243,21 @@ with aba_cadastro_contrato:
         "cliente": "Cliente",
         "empresa_grupo_projeta": "Empresa do Grupo"
     })
-    df_contratos["Data de Assinatura"] = pd.to_datetime(df_contratos["Data de Assinatura"], format="mixed")
-    df_contratos["Data de Assinatura"] = df_contratos["Data de Assinatura"].dt.strftime("%Y-%m-%d %H:%M:%S")
+    
     df_contratos_filtrados = df_contratos[df_contratos["Cliente"] == cliente_selecionado] 
-    df_contratos_filtrados = df_contratos_filtrados[["Contrato/Ata", "Ano", "Tipo", "Data de Assinatura", "Prazo (dias)", "Valor Inicial", "Empresa do Grupo"]] 
+    
+    utils.formatar_data_brasil(df_contratos_filtrados, "Data de Assinatura")
+    utils.configurar_valor_moeda(df_contratos_filtrados, "Valor Inicial")
+    df_contratos_filtrados = df_contratos_filtrados[["Contrato/Ata", "Ano", "Tipo", "Data de Assinatura", "Prazo (dias)", "Valor Inicial", "Empresa do Grupo"]]     
     st.write("Lista de Contratos Cadastrados")
-    st.dataframe(df_contratos_filtrados, use_container_width=True)
+    
+    # Ajusta a altura da tabela
+    altura_final = utils.altura_tabela(df_contratos_filtrados, 8)        
+    st.dataframe(df_contratos_filtrados, use_container_width=True, height=altura_final)    
 
-with aba_cadastro_aditivo:    
+with aba_cadastro_aditivo:  
+    
+    st.write("")  
 
     col1, col2 = st.columns(2)
 
@@ -274,8 +293,9 @@ with aba_cadastro_aditivo:
            "Contrato*", key="contrato_aditivo", options=sorted(mapa_contratos.keys())
         )
 
-        
 with aba_cadastro_item:
+    
+    st.write("")
     
     cadastro_realizado = False
     
@@ -314,3 +334,15 @@ with aba_cadastro_item:
     
     if cadastro_realizado:
         show_success_dialog()
+        
+    consulta = supabase.table("tb_itens").select("item, created_at").execute()
+    
+    if consulta.data:
+        df_itens = pd.DataFrame(consulta.data)        
+        df_itens = df_itens.rename(columns={"item": "Item", "created_at": "Criado em"})
+        utils.formatar_data_hora_brasil(df_itens, "Criado em")
+        st.write("Lista de Itens Cadastrados")
+        
+        # Ajusta a altura da tabela
+        altura_final = utils.altura_tabela(df_itens, 8)        
+        st.dataframe(df_itens, use_container_width=True, height=altura_final)    

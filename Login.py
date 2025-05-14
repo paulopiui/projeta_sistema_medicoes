@@ -58,7 +58,7 @@ with aba_cadastro:
     utils.validar_nivel_acesso("administrador")
         
     nome = st.text_input("Nome completo", key="nome_cadastro")
-    nivel_acesso = unidecode(st.selectbox("Nível de Acesso", ["Usuário", "Administrador"], key="nivel_acesso_cadastro")).lower()
+    nivel_acesso = unidecode(st.selectbox("Nível de Acesso", ["Usuário", "Gerente", "Administrador"], key="nivel_acesso_cadastro")).lower()
     email = st.text_input("E-mail", key="email_cadastro")
     senha = st.text_input("Senha", type="password", key="senha_cadastro")
     st.info("ℹ️  A senha deve possuir no míninmo 6 caracteres, letras e números.")
