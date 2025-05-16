@@ -2,6 +2,8 @@ import streamlit as st
 from conexao_supabase import supabase
 import pandas as pd
 import pytz
+from datetime import datetime
+import time
 
 def exibir_cabecalho():
 
@@ -104,14 +106,64 @@ def configurar_valor_moeda(df, coluna):
     return df
 
 def formatar_data_brasil(df, coluna):
-    df[coluna] = pd.to_datetime(df[coluna], utc=True)    
+    df[coluna] = pd.to_datetime(df[coluna], utc=True, format='mixed')    
     df[coluna] = df[coluna].dt.tz_convert("America/Sao_Paulo")       
     df[coluna] = df[coluna].dt.strftime('%d/%m/%Y')   
     return df
 
 def formatar_data_hora_brasil(df, coluna):   
      
-    df[coluna] = pd.to_datetime(df[coluna], utc=True)    
+    df[coluna] = pd.to_datetime(df[coluna], utc=True, format='mixed')    
     df[coluna] = df[coluna].dt.tz_convert("America/Sao_Paulo")    
     df[coluna] = df[coluna].dt.strftime("%d-%m-%Y %H:%M:%S")
     return df
+
+@st.dialog("Cadastrar Medição")
+def cadastrar_medicao(contrato):
+    
+    resposta = supabase.table("tb_contratos").select("id, tb_clientes(id, cliente), dt_assinatura").eq("numero_contrato_ata", contrato).execute()
+    id_contrato = resposta.data[0]["id"] if resposta.data else None
+    
+    mes_referencia_minimo = pd.to_datetime(resposta.data[0]["dt_assinatura"]).date() if resposta.data and resposta.data[0]["dt_assinatura"] else pd.to_datetime("today").date()
+    
+    meses = pd.date_range(start=mes_referencia_minimo, end=datetime.today(), freq='MS')
+    opcoes = [d.strftime('%m/%Y') for d in meses]
+    
+    # Campos para cadastro
+    mes_referencia = st.selectbox("Selecione o Mês de Referência", opcoes)
+    valor = st.number_input("Valor da Medição", min_value=0.0, format="%.2f")
+    
+    if st.button("Cadastrar Medição", key="cadastrar_medicao_dialog"):
+        if not mes_referencia or valor <= 0:
+            st.warning("⚠️ Preencha todos os campos.")
+        else:          
+            mes_ref_date = datetime.strptime(mes_referencia, "%m/%Y").date()
+            (supabase.table("tb_medicoes")
+             .insert({"id_contrato": id_contrato, "mes_referencia": mes_ref_date.isoformat(), "valor_medido": valor})
+             .execute()
+             )
+            st.success("✅ Medição cadastrada com sucesso!")
+            time.sleep(1)
+            st.rerun()
+
+# Função para carregar contratos do Supabase
+def carregar_contratos():
+    query = (
+        supabase
+        .table("tb_contratos")
+        .select("id, numero_contrato_ata, ano, tb_clientes(id, cliente), tipo, status")
+        .execute()
+    )
+    
+    data = query.data if query.data else []
+    df = pd.DataFrame(data)
+
+    if not df.empty:
+        df["cliente"] = df["tb_clientes"].apply(lambda x: x["cliente"] if isinstance(x, dict) else None)
+        df.drop(columns=["tb_clientes"], inplace=True)  # Remover coluna aninhada
+    
+    return df
+
+@st.dialog("⚠️  Alerta")
+def dialogo_alerta(texto):
+    st.write(texto)
