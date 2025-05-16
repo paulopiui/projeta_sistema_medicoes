@@ -58,7 +58,7 @@ if contrato_selecionado:
     with col1:
 
         if df_filtrado.empty:
-            st.warning("Nenhum contrato encontrado.")
+            st.info("Nenhum contrato encontrado.")
             st.stop()
 
         cliente = df_filtrado.iloc[0]["cliente"]
@@ -107,7 +107,7 @@ if contrato_selecionado:
             with st.expander(titulo_expander):
                 
                 if df_itens_medidos.empty:
-                    st.warning("Nenhum item medido encontrado.")
+                    st.info("Sem itens medidos")
                     st.stop()
                 else:
                     df_filtrado_itens = df_itens_medidos[df_itens_medidos["id_medicao"] == id_medicao]
@@ -122,9 +122,6 @@ if contrato_selecionado:
                             "valor_medido": "Valor (R$)"
                     })
 
-                    if not df_filtrado_itens.empty:
-                        st.dataframe(df_itens_exibicao, hide_index=True)
-                    else:
-                        st.warning("Nenhum item medido encontrado.")
+    
     else:
         st.warning("Sem medições")  

@@ -164,6 +164,33 @@ def carregar_contratos():
     
     return df
 
+def carregar_medicoes(id_contrato):
+    query = (
+        supabase
+        .table("tb_medicoes")
+        .select("id, id_contrato, numero_medicao, mes_referencia, valor_medido, status")
+        .eq("id_contrato", id_contrato)
+        .execute()
+    )
+        
+    data = query.data if query.data else []
+    df_medicoes = pd.DataFrame(data)         
+
+    return df_medicoes
+
+def carregar_itens_medidos():
+    query = (
+        supabase
+        .table("tb_itens_medidos")
+        .select("id, id_medicao, id_item, quantidade_medida, unidade_medida, valor_medido, valor_unitario")        
+        .execute()
+    )
+    
+    data = query.data if query.data else []
+    df_itens = pd.DataFrame(data)         
+
+    return df_itens
+
 @st.dialog("⚠️  Alerta")
 def dialogo_alerta(texto):
     st.write(texto)

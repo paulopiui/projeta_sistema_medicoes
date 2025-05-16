@@ -72,6 +72,13 @@ with aba_cadastro_municipio:
         # Ajusta a altura da tabela
         altura_final = utils.altura_tabela(df_municipios, 8)        
         st.dataframe(df_municipios, use_container_width=True, height=altura_final)
+        
+        st.data_editor(
+            df_municipios,
+            use_container_width=True,
+            hide_index=True,
+            num_rows= "flexible")
+        
     else:
         st.warning("Nenhum município cadastrado até o momento.")
 
