@@ -3,24 +3,80 @@ import pandas as pd
 import utils
 from conexao_supabase import supabase
 
-utils.config_pagina_centralizada()
-#utils.exibir_cabecalho_centralizado_pequeno()
+utils.config_pagina()
+#utils.config_pagina_centralizada()
 utils.validar_login()
 utils.validar_nivel_acesso("gerente")
 
 @st.dialog("Cadastro realizado com sucesso!")
 def show_success_dialog():    
     st.write("")
+
+
+@st.dialog("⚠️  Atenção - Exclusão de Itens")
+def confirmacao_exclusao():
+    st.write("Esta ação não poderá ser desfeita, confirma a exclusão dos itens selecionados?")
     
-col1, col2, col3 = st.columns([1, 3, 1])
+    col1, col2, col3, col4, col5 = st.columns([1,2,1,2,1])
+    
+    with col2:
+        if st.button("Confirmar"):
+
+            ids_para_excluir = [
+                row["ID"] for _, row in df_excluir.iterrows() if row["Excluir"]
+            ]
+            if ids_para_excluir:
+                supabase.table("tb_itens_por_contrato").delete().in_("id", ids_para_excluir).execute()
+            st.success("Itens excluídos com sucesso!")
+            del st.session_state["df_exclusao"]
+            st.rerun()
+            
+    
+    with col4:
+        if st.button("Cancelar"):            
+            del st.session_state["df_exclusao"]
+            st.rerun()
+    
+    
+def atualizar_itens_grupo(contrato_id, grupo_id, itens):
+    
+    # Buscar os itens já cadastrados no contrato
+    vinculados = supabase.table("tb_itens_por_contrato") \
+        .select("id_item, valor_unitario, quantidade_contratada") \
+        .eq("id_contrato", contrato_id) \
+        .execute().data
+
+    itens_ja_cadastrados = {
+        v["id_item"]: {
+            "valor_unitario": v["valor_unitario"],
+            "quantidade_contratada": v["quantidade_contratada"]
+        }
+        for v in vinculados
+    }
+
+    # Criar dataframe com base nos itens do grupo
+    df = pd.DataFrame([
+        {
+            "ID": i["id"],
+            "Item": i["item"],
+            "Valor Unitário": itens_ja_cadastrados[i["id"]]["valor_unitario"] if i["id"] in itens_ja_cadastrados else 0.0,
+            "Quantidade Contratada": itens_ja_cadastrados[i["id"]]["quantidade_contratada"] if i["id"] in itens_ja_cadastrados else 0.0,
+            "Cadastrar": i["id"] in itens_ja_cadastrados
+        }
+        for i in itens if i["id_grupo"] == grupo_id
+    ])
+   
+    
+                               
+col1, col2, col3 = st.columns(3)
 
 with col2:
     # Título da Aplicação
     st.title("Cadastro de Dados")
 
 # Seção de Abas
-aba_cadastro_municipio, aba_cadastro_cliente, aba_cadastro_contrato, aba_cadastro_aditivo, aba_cadastro_item = st.tabs(
-    ["Município", "Cliente", "Contrato", "Aditivo","Item Medição"]
+aba_cadastro_municipio, aba_cadastro_cliente, aba_cadastro_contrato, aba_cadastro_itens_contrato, aba_cadastro_aditivo, aba_cadastro_item = st.tabs(
+    ["Município", "Cliente", "Contrato", "Itens do Contrato", "Aditivo","Item Medição"]
 )
 
 with aba_cadastro_municipio:
@@ -72,12 +128,6 @@ with aba_cadastro_municipio:
         # Ajusta a altura da tabela
         altura_final = utils.altura_tabela(df_municipios, 8)        
         st.dataframe(df_municipios, use_container_width=True, height=altura_final)
-        
-        st.data_editor(
-            df_municipios,
-            use_container_width=True,
-            hide_index=True,
-            num_rows= "flexible")
         
     else:
         st.warning("Nenhum município cadastrado até o momento.")
@@ -262,9 +312,173 @@ with aba_cadastro_contrato:
     altura_final = utils.altura_tabela(df_contratos_filtrados, 8)        
     st.dataframe(df_contratos_filtrados, use_container_width=True, height=altura_final)    
 
-with aba_cadastro_aditivo:  
+with aba_cadastro_itens_contrato:
+    st.write("")
+
+    # Buscar contratos, grupos e itens
+    contratos = supabase.table("tb_contratos").select("id, numero_contrato_ata").execute().data
+    grupos = supabase.table("tb_grupos_itens").select("id, grupo").execute().data
+    itens = supabase.table("tb_itens").select("id, item, id_grupo").execute().data
+
+    # Mapas de apoio
+    map_contratos = {f"{c['numero_contrato_ata']}": c["id"] for c in contratos}
+    map_grupos = {g["grupo"]: g["id"] for g in grupos}
+
+    col1, col2, col3, col4 = st.columns([1, 2, 0.5, 0.5])
     
-    st.write("")  
+    # Seleção do contrato e grupo
+    with col1:    
+        contrato_nome = st.selectbox("Contrato", map_contratos.keys())
+    
+    with col2:
+        grupo_nome = st.selectbox("Grupo de Itens", map_grupos.keys())
+
+    with col4:
+        if st.button("Atualizar Itens"):
+            st.rerun()
+    
+    if "itens_grupo_df" not in st.session_state:
+        st.session_state.itens_grupo_df = pd.DataFrame()
+
+    grupo_id = map_grupos[grupo_nome]
+    contrato_id = map_contratos[contrato_nome]
+    
+    aba_cadastro, aba_exclusao = st.tabs(["Cadastro\Edição", "Exclusão"])
+    
+    # ADCIONAR\EDITAR itens ##################################################################################
+    with aba_cadastro:
+
+        # Itens do grupo
+        itens_grupo = [i for i in itens if i["id_grupo"] == grupo_id]
+        if not itens_grupo:
+            st.warning("Nenhum item encontrado neste grupo.")
+        else:
+            st.session_state.itens_grupo_df = atualizar_itens_grupo(contrato_id, grupo_id, itens)
+
+        # Editor de tabela
+        if not st.session_state.itens_grupo_df.empty:  
+            
+            st.markdown("""
+                <div style="background-color:#e6f2ff; padding:1px; border-radius:5px; height:50px; display:flex; align-items:center; justify-content:center;">
+                    <h3 style="margin:0; color:#003366;">✏️ Adicionar/Editar</h3>
+                </div>
+            """, unsafe_allow_html=True)
+
+            edited_df = st.data_editor(
+                st.session_state.itens_grupo_df,
+                use_container_width=True,
+                num_rows=10,
+                key="editor_grupo",
+                column_config={
+                    "Item": st.column_config.Column(disabled=True),
+                    "ID": st.column_config.Column(disabled=True),
+                    "Valor Unitário": st.column_config.NumberColumn("Valor Unitário (R$)", min_value=0.0, step=0.01),
+                    "Quantidade Contratada": st.column_config.NumberColumn("Qtd. Contratada", min_value=0.0, step=0.01),
+                    "Cadastrar": st.column_config.CheckboxColumn("Cadastrar")  # nova coluna
+                }
+            )
+
+
+            # Botão para salvar os itens (excluindo os marcados)
+            if st.button("Salvar Itens no Contrato"):
+                
+                contrato_id = map_contratos[contrato_nome]
+                novos = []
+                atualizacoes = []
+
+                for _, row in edited_df.iterrows():
+                    if row["Cadastrar"]:
+                        dados = {
+                            "id_contrato": contrato_id,
+                            "id_item": row["ID"],
+                            "valor_unitario": row["Valor Unitário"],
+                            "quantidade_contratada": row["Quantidade Contratada"]
+                        }
+
+                        if row["ID"] in itens_ja_cadastrados:
+                            atualizacoes.append(dados)
+                        else:
+                            novos.append(dados)
+
+                # Inserir novos
+                if novos:
+                    supabase.table("tb_itens_por_contrato").insert(novos).execute()
+
+                # Atualizar existentes
+                for item in atualizacoes:
+                    supabase.table("tb_itens_por_contrato") \
+                        .update({
+                            "valor_unitario": item["valor_unitario"],
+                            "quantidade_contratada": item["quantidade_contratada"]
+                        }) \
+                        .eq("id_contrato", item["id_contrato"]) \
+                        .eq("id_item", item["id_item"]) \
+                        .execute()
+
+                st.success("Itens atualizados com sucesso!")
+                st.session_state.itens_grupo_df = atualizar_itens_grupo(contrato_id, grupo_id, itens)
+                st.rerun()
+
+
+
+    # EXCLUIR itens ##########################################################################################
+    with aba_exclusao:
+        
+        st.markdown("""
+            <div style="background-color:#ffcccc; padding:1px; border-radius:5px; height:50px; display:flex; align-items:center; justify-content:center;">
+                <h3 style="margin:0; color:#800000;">❌ Excluir Itens</h3>
+            </div>
+        """, unsafe_allow_html=True)
+          
+        
+        
+        if "df_exclusao" not in st.session_state:
+            
+            # Buscar os itens já cadastrados no contrato
+            vinculados = supabase.table("tb_itens_por_contrato") \
+                .select("id, id_item, valor_unitario, quantidade_contratada") \
+                .eq("id_contrato", contrato_id) \
+                .execute().data
+
+
+            if vinculados:
+                
+                dados_vinculados = []
+                for v in vinculados:
+                    item_nome = next((i["item"] for i in itens if i["id"] == v["id_item"]), "Desconhecido")
+                    dados_vinculados.append({
+                        "ID": v["id"],
+                        "Item": item_nome,
+                        "Valor Unitário": v["valor_unitario"],
+                        "Quantidade Contratada": v["quantidade_contratada"],
+                        "Excluir": False  # Coluna para marcar exclusão
+                    })
+                st.session_state.df_exclusao = pd.DataFrame(dados_vinculados)
+            
+            else:
+                st.session_state.df_exclusao = pd.DataFrame(columns=["ID", "Item", "Valor Unitário", "Quantidade Contratada", "Excluir"])
+                    
+        if st.session_state.df_exclusao.empty:
+            st.info("ℹ️  Nenhum item vinculado ao Contrato para exclusão.")       
+        else:
+            df_excluir = st.data_editor(
+            st.session_state.df_exclusao,
+            use_container_width=True,
+            key="editor_excluir_itens",
+            num_rows=10
+            )
+        
+            if st.button("Excluir Itens Selecionados"):
+                
+                if df_excluir.empty:
+                    st.info("ℹ️  Nenhum item encontrado para exclusão.")
+                else:                
+                    confirmacao_exclusao()
+                
+
+with aba_cadastro_aditivo:
+
+    st.write("")
 
     col1, col2 = st.columns(2)
 
