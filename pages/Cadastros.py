@@ -313,6 +313,7 @@ with aba_cadastro_contrato:
     st.dataframe(df_contratos_filtrados, use_container_width=True, height=altura_final)    
 
 with aba_cadastro_itens_contrato:
+    
     st.write("")
 
     # Buscar contratos, grupos e itens
@@ -321,7 +322,9 @@ with aba_cadastro_itens_contrato:
     itens = supabase.table("tb_itens").select("id, item, id_grupo").execute().data
 
     # Mapas de apoio
+    # Mapa de Contratos | Número do Contrato e ID do Contrato
     map_contratos = {f"{c['numero_contrato_ata']}": c["id"] for c in contratos}
+    # Mapa de Grupos | Nome do Grupo e ID do Grupo
     map_grupos = {g["grupo"]: g["id"] for g in grupos}
 
     col1, col2, col3, col4 = st.columns([1, 2, 0.5, 0.5])
@@ -334,29 +337,35 @@ with aba_cadastro_itens_contrato:
         grupo_nome = st.selectbox("Grupo de Itens", map_grupos.keys())
 
     with col4:
-        if st.button("Atualizar Itens"):
+        if st.button("Atualizar Itens"):            
             st.rerun()
     
     if "itens_grupo_df" not in st.session_state:
         st.session_state.itens_grupo_df = pd.DataFrame()
 
+    # Baseado na seleção do usuário, captura o ID do grupo e do contrato
     grupo_id = map_grupos[grupo_nome]
     contrato_id = map_contratos[contrato_nome]
     
+    # Criação de abas para Cadastro e Exclusão de itens
     aba_cadastro, aba_exclusao = st.tabs(["Cadastro\Edição", "Exclusão"])
     
     # ADCIONAR\EDITAR itens ##################################################################################
     with aba_cadastro:
 
         # Itens do grupo
+        # Percorre os itens e filtra apenas os do grupo selecionado
         itens_grupo = [i for i in itens if i["id_grupo"] == grupo_id]
+        
+        # Se o grupo selecionado não possuir itens, mostra uma mensagem de aviso
+        # Caso contrário, atualiza o session_state com os itens do grupo
         if not itens_grupo:
             st.warning("Nenhum item encontrado neste grupo.")
         else:
             st.session_state.itens_grupo_df = atualizar_itens_grupo(contrato_id, grupo_id, itens)
 
         # Editor de tabela
-        if not st.session_state.itens_grupo_df.empty:  
+        if not st.session_state.itens_grupo_df:  
             
             st.markdown("""
                 <div style="background-color:#e6f2ff; padding:1px; border-radius:5px; height:50px; display:flex; align-items:center; justify-content:center;">
@@ -521,9 +530,22 @@ with aba_cadastro_item:
     cadastro_realizado = False
     
     with st.form(key="cadastro_item_form"):
+        
+        col1, col2 = st.columns(2)
+        with col1:
 
-        nome_item = st.text_input("Nome do Item*").strip().title()
-    
+            nome_item = st.text_input("Nome do Item*").strip().title()
+
+        with col2:
+            
+            grupos = supabase.table("tb_grupos_itens").select("id, grupo").execute().data
+            
+            mapa_grupos = {g["grupo"]: g["id"] for g in grupos}
+            
+            grupo_item = st.selectbox("Grupo do Item*", options=[""] + sorted(mapa_grupos.keys()))      
+            
+            grupo_id = mapa_grupos[grupos]
+
         submit_button=st.form_submit_button("Cadastrar Item")
 
         if submit_button:
@@ -542,7 +564,7 @@ with aba_cadastro_item:
                 else:               
 
                     try:
-                        data = {"item": nome_item}
+                        data = {"item": nome_item, "id_grupo":id_grupo}
                         
                         with st.spinner("Cadastrando item..."):
                             supabase.table("tb_itens").insert(data).execute() 
@@ -556,11 +578,11 @@ with aba_cadastro_item:
     if cadastro_realizado:
         show_success_dialog()
         
-    consulta = supabase.table("tb_itens").select("item, created_at").execute()
+    consulta = supabase.table("tb_itens").select("item, tb_grupos_itens(grupo), created_at").execute()
     
     if consulta.data:
-        df_itens = pd.DataFrame(consulta.data)        
-        df_itens = df_itens.rename(columns={"item": "Item", "created_at": "Criado em"})
+        df_itens = pd.DataFrame(consulta.data)
+        df_itens = df_itens.rename(columns={"item": "Item", "created_at": "Criado em", "tb_grupos_itens": "Grupo"})
         utils.formatar_data_hora_brasil(df_itens, "Criado em")
         st.write("Lista de Itens Cadastrados")
         
