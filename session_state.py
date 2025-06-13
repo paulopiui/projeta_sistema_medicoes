@@ -1,5 +1,5 @@
 import streamlit as st
-import utils
+from utils import utils
 
 utils.validar_login()
 utils.validar_nivel_acesso("gerente")

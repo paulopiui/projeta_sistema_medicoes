@@ -1,5 +1,5 @@
 import streamlit as st
-import utils
+from utils import utils
 from conexao_supabase import supabase
 from unidecode import unidecode
 
