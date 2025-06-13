@@ -1,5 +1,5 @@
 import streamlit as st
-from conexao_supabase import supabase
+from utils.conexao_supabase import supabase
 from utils import dialogs
 import pandas as pd
 
@@ -32,8 +32,6 @@ def aba_cadastro_item_contrato():
             }
             for i in itens if i["id_grupo"] == grupo_id
         ])    
-    
-    
     
     st.write("")
 

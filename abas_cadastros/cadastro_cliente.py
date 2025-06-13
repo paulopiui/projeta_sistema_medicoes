@@ -1,6 +1,6 @@
 import streamlit as st
-from conexao_supabase import supabase
-import utils as utils
+from utils.conexao_supabase import supabase
+from utils import format
 import pandas as pd
 
 def aba_cadastro_cliente():
@@ -63,12 +63,12 @@ def aba_cadastro_cliente():
         df_clientes["Data de Cadastro"] = pd.to_datetime(df_clientes["Data de Cadastro"], format="mixed")
         df_clientes["Data de Cadastro"] = df_clientes["Data de Cadastro"].dt.strftime("%Y-%m-%d %H:%M:%S")
         df_clientes = df_clientes[["Cliente", "Município", "UF", "Data de Cadastro"]]
-        utils.formatar_data_hora_brasil(df_clientes, "Data de Cadastro") 
+        format.formatar_data_hora_brasil(df_clientes, "Data de Cadastro") 
         
         st.write("Lista de Clientes Cadastrados")
         
         # Ajusta a altura da tabela
-        altura_final = utils.altura_tabela(df_clientes, 8)        
+        altura_final = format.altura_tabela(df_clientes, 8)        
         st.dataframe(df_clientes, use_container_width=True, height=altura_final)                
     else:
         st.warning("Nenhum cliente cadastrado até o momento.")    

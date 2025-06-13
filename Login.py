@@ -1,10 +1,10 @@
 import streamlit as st
-from utils import utils
-from conexao_supabase import supabase
+from utils import format, validate
+from utils.conexao_supabase import supabase
 from unidecode import unidecode
 
-utils.config_pagina_centralizada()
-utils.exibir_cabecalho_centralizado()
+format.config_pagina_centralizada()
+format.exibir_cabecalho_centralizado()
 
 # Seção de Abas
 aba_login, aba_cadastro = st.tabs(["LOGIN", "CADASTRO"])
@@ -54,8 +54,8 @@ with aba_login:
 with aba_cadastro:
     st.subheader("📝 Cadastro")    
     
-    utils.validar_login()        
-    utils.validar_nivel_acesso("administrador")
+    validate.validar_login()        
+    validate.validar_nivel_acesso("administrador")
         
     nome = st.text_input("Nome completo", key="nome_cadastro")
     nivel_acesso = unidecode(st.selectbox("Nível de Acesso", ["Usuário", "Gerente", "Administrador"], key="nivel_acesso_cadastro")).lower()

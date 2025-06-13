@@ -1,6 +1,6 @@
 import streamlit as st
-from conexao_supabase import supabase
-import utils.utils as utils
+from utils.conexao_supabase import supabase
+from utils import format
 import pandas as pd
 
 def aba_cadastro_municipio():    
@@ -60,12 +60,12 @@ def aba_cadastro_municipio():
         df_municipios = df_municipios.rename(columns={"municipio": "Município", "uf": "UF", "dt_cadastro": "Data de Cadastro"})
         df_municipios["Data de Cadastro"] = pd.to_datetime(df_municipios["Data de Cadastro"], format="mixed")
         df_municipios["Data de Cadastro"] = df_municipios["Data de Cadastro"].dt.strftime("%Y-%m-%d %H:%M:%S")
-        utils.formatar_data_hora_brasil(df_municipios, "Data de Cadastro")        
+        format.formatar_data_hora_brasil(df_municipios, "Data de Cadastro")        
         df_municipios = df_municipios[["Município", "UF", "Data de Cadastro"]]
         st.write("Lista de Municípios Cadastrados")
         
         # Ajusta a altura da tabela
-        altura_final = utils.altura_tabela(df_municipios, 8)        
+        altura_final = format.altura_tabela(df_municipios, 8)        
         st.dataframe(df_municipios, use_container_width=True, height=altura_final)
         
     else:

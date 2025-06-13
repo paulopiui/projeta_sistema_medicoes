@@ -1,5 +1,5 @@
 import streamlit as st
-from conexao_supabase import supabase
+from utils.conexao_supabase import supabase
 
 @st.dialog("Cadastro realizado com sucesso!")
 def show_success_dialog():    

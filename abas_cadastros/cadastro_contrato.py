@@ -1,6 +1,6 @@
 import streamlit as st
-from conexao_supabase import supabase
-from utils import utils
+from utils.conexao_supabase import supabase
+from utils import format
 import pandas as pd
 
 def aba_cadastro_contrato():
@@ -17,13 +17,13 @@ def aba_cadastro_contrato():
             cliente_nome = c["cliente"].strip()
             if cliente_nome not in mapa_clientes:
                 mapa_clientes[cliente_nome] = c["id"]
-        cliente_selecionado = st.selectbox("Cliente*", sorted(mapa_clientes.keys()))
+        cliente_selecionado = st.selectbox("Cliente*", sorted(mapa_clientes.keys()),key="selecao_cliente")
 
     with col2:
         # Carregar empresas
         empresas = supabase.table("tb_empresas").select("id, empresa_grupo_projeta").execute()
         mapa_empresas = {e["empresa_grupo_projeta"]: e["id"] for e in empresas.data}
-        empresa_selecionada = st.selectbox("Empresa Grupo Projeta*", sorted(mapa_empresas.keys()))
+        empresa_selecionada = st.selectbox("Empresa Grupo Projeta*", sorted(mapa_empresas.keys()),key="selecao_empresa")
 
     with st.form(key="cadastro_contrato_form"):
 
@@ -113,11 +113,11 @@ def aba_cadastro_contrato():
     
     df_contratos_filtrados = df_contratos[df_contratos["Cliente"] == cliente_selecionado] 
     
-    utils.formatar_data_brasil(df_contratos_filtrados, "Data de Assinatura")
-    utils.configurar_valor_moeda(df_contratos_filtrados, "Valor Inicial")
+    format.formatar_data_brasil(df_contratos_filtrados, "Data de Assinatura")
+    format.configurar_valor_moeda(df_contratos_filtrados, "Valor Inicial")
     df_contratos_filtrados = df_contratos_filtrados[["Contrato/Ata", "Ano", "Tipo", "Data de Assinatura", "Prazo (dias)", "Valor Inicial", "Empresa do Grupo"]]     
     st.write("Lista de Contratos Cadastrados")
     
     # Ajusta a altura da tabela
-    altura_final = utils.altura_tabela(df_contratos_filtrados, 8)        
+    altura_final = format.altura_tabela(df_contratos_filtrados, 8)        
     st.dataframe(df_contratos_filtrados, use_container_width=True, height=altura_final)       

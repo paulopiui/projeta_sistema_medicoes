@@ -1,7 +1,7 @@
 import pandas as pd
 import streamlit as st
 import utils.utils as utils
-from conexao_supabase import supabase
+from utils.conexao_supabase import supabase
 
 # Configuração da Página e Cabeçalho
 utils.config_pagina()
